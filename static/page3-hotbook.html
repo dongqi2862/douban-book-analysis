@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>豆瓣图书数据分析 - 热门图书</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+  background: #f0f4f9;
+  color: #2c3e50;
+}
+.sidebar {
+  position: fixed;
+  left: 0; top: 0;
+  width: 240px;
+  height: 100vh;
+  background: linear-gradient(180deg, #1e3a5f 0%, #165DFF 100%);
+  color: #fff;
+  overflow-y: auto;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.12);
+  z-index: 100;
+}
+.sidebar .logo {
+  padding: 24px 20px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  text-align: center;
+}
+.sidebar .logo small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+.sidebar nav {
+  padding: 16px 0;
+}
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  padding: 13px 24px;
+  color: rgba(255,255,255,0.78);
+  text-decoration: none;
+  font-size: 14px;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+.sidebar nav a:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+.sidebar nav a.active {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-left-color: #4fc3f7;
+  font-weight: 600;
+}
+.sidebar nav a .icon {
+  margin-right: 10px;
+  font-size: 16px;
+}
+.main {
+  margin-left: 240px;
+  padding: 24px;
+  min-height: 100vh;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: 22px;
+  color: #1e3a5f;
+  font-weight: 700;
+}
+.header .crumb {
+  font-size: 13px;
+  color: #7a8a99;
+}
+.card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-bottom: 20px;
+  border: 1px solid #e6ecf2;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e3a5f;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #165DFF;
+  display: inline-block;
+}
+.loading, .error-msg {
+  text-align: center;
+  padding: 60px 20px;
+  color: #95a5a6;
+  font-size: 14px;
+}
+.error-msg {
+  color: #e74c3c;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 13px;
+}
+th {
+  background: #f7fafd;
+  color: #1e3a5f;
+  font-weight: 600;
+}
+tr:hover td {
+  background: #f7fafd;
+}
+.rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+.rank.top1 { background: #e74c3c; }
+.rank.top2 { background: #e67e22; }
+.rank.top3 { background: #f1c40f; }
+.rank.normal { background: #95a5a6; }
+.book-title {
+  font-weight: 600;
+  color: #1e3a5f;
+}
+.book-author {
+  color: #7a8a99;
+  font-size: 12px;
+}
+.rate {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 3px;
+  font-weight: 700;
+  color: #fff;
+  background: #165DFF;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  background: #eef4ff;
+  color: #165DFF;
+}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">豆瓣图书数据分析<small>DOUBAN BOOK DASHBOARD</small></div>
+  <nav>
+    <a href="index.html"><span class="icon">▣</span>首页</a>
+    <a href="page1-score.html"><span class="icon">★</span>评分统计</a>
+    <a href="page2-country.html"><span class="icon">◎</span>国别分布</a>
+    <a href="page3-hotbook.html" class="active"><span class="icon">☰</span>热门图书</a>
+    <a href="page4-year.html"><span class="icon">▤</span>出版年份</a>
+  </nav>
+</div>
+<div class="main">
+  <div class="header">
+    <h1>热门图书 TOP10</h1>
+    <div class="crumb">首页 / 热门图书</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">热门图书排行</div>
+    <div id="tableWrap">
+      <div class="loading">数据加载中...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000/api/';
+// 书名和标签映射，后端不动，前端匹配
+const tagMap = {
+    "活着": "小说",
+    "追风筝的人": "外国文学",
+    "小王子": "童话",
+    "解忧杂货店": "推理",
+    "嫌疑人X的献身": "推理",
+    "白夜行": "推理",
+    "百年孤独": "外国文学",
+    "红楼梦": "古典文学",
+    "围城": "小说",
+    "房思琪的初恋乐园": "小说"
+};
+
+function fetchJSON(url, cb, errCb) {
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(d => cb(d))
+    .catch(e => { if (errCb) errCb(e); });
+}
+
+fetchJSON(API + 'hot_book/', function(data) {
+  const arr = Array.isArray(data) ? data : (data.data || data.list || data.books || data.hot_book || []);
+  const top10 = arr.slice(0, 10);
+
+  let html = '<table><thead><tr>';
+  html += '<th style="width:70px">排名</th><th>书名</th><th>作者</th><th style="width:90px">评分</th><th style="width:120px">评价数</th><th>标签</th>';
+  html += '</tr></thead><tbody>';
+
+  top10.forEach((item, idx) => {
+    const rank = idx + 1;
+    const rankCls = rank === 1 ? 'top1' : rank === 2 ? 'top2' : rank === 3 ? 'top3' : 'normal';
+    const title = item.book_name || '—';
+    const author = item.author || '—';
+    const rate = item.score || '—';
+    const votes = item.comment_count || '—';
+    const tag = tagMap[title] || '';
+
+    html += '<tr>';
+    html += '<td><span class="rank ' + rankCls + '">' + rank + '</span></td>';
+    html += '<td><div class="book-title">' + title + '</div></td>';
+    html += '<td><span class="book-author">' + author + '</span></td>';
+    html += '<td><span class="rate">' + rate + '</span></td>';
+    html += '<td>' + votes + '</td>';
+    html += '<td>' + (tag ? '<span class="tag">' + tag + '</span>' : '—') + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('tableWrap').innerHTML = html;
+}, function() {
+  document.getElementById('tableWrap').innerHTML = '<div class="error-msg">数据加载失败，请检查接口 http://127.0.0.1:8000/api/hot_book/ 是否可用</div>';
+});
+</script>
+</body>
+</html>

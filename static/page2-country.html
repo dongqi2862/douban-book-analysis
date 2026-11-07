@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>豆瓣图书数据分析 - 国别分布</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+  background: #f0f4f9;
+  color: #2c3e50;
+}
+.sidebar {
+  position: fixed;
+  left: 0; top: 0;
+  width: 240px;
+  height: 100vh;
+  background: linear-gradient(180deg, #1e3a5f 0%, #165DFF 100%);
+  color: #fff;
+  overflow-y: auto;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.12);
+  z-index: 100;
+}
+.sidebar .logo {
+  padding: 24px 20px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  text-align: center;
+}
+.sidebar .logo small { display: block; font-size: 12px; font-weight: 400; opacity: 0.7; margin-top: 6px; }
+.sidebar nav { padding: 16px 0; }
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  padding: 13px 24px;
+  color: rgba(255,255,255,0.78);
+  text-decoration: none;
+  font-size: 14px;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+.sidebar nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.sidebar nav a.active {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-left-color: #4fc3f7;
+  font-weight: 600;
+}
+.sidebar nav a .icon { margin-right: 10px; font-size: 16px; }
+.main {
+  margin-left: 240px;
+  padding: 24px;
+  min-height: 100vh;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.header h1 { font-size: 22px; color: #1e3a5f; font-weight: 700; }
+.header .crumb { font-size: 13px; color: #7a8a99; }
+.card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-bottom: 20px;
+  border: 1px solid #e6ecf2;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e3a5f;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #165DFF;
+  display: inline-block;
+}
+.chart-box { width: 100%; height: 560px; }
+.loading, .error-msg {
+  text-align: center;
+  padding: 60px 20px;
+  color: #95a5a6;
+  font-size: 14px;
+}
+.error-msg { color: #e74c3c; }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">豆瓣图书数据分析<small>DOUBAN BOOK DASHBOARD</small></div>
+  <nav>
+    <a href="index.html"><span class="icon">▣</span>首页</a>
+    <a href="page1-score.html"><span class="icon">★</span>评分统计</a>
+    <a href="page2-country.html" class="active"><span class="icon">◎</span>国别分布</a>
+    <a href="page3-hotbook.html"><span class="icon">☰</span>热门图书</a>
+    <a href="page4-year.html"><span class="icon">▤</span>出版年份</a>
+  </nav>
+</div>
+<div class="main">
+  <div class="header">
+    <h1>国别分布</h1>
+    <div class="crumb">首页 / 国别分布</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">图书国别分布环形图</div>
+    <div id="chartCountry" class="chart-box"><div class="loading">数据加载中...</div></div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000/api/';
+
+function fetchJSON(url, cb, errCb) {
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(d => cb(d))
+    .catch(e => { if (errCb) errCb(e); });
+}
+
+fetchJSON(API + 'country_count/', function(data) {
+  const arr = Array.isArray(data) ? data : (data.data || data.list || data.country || []);
+  const chartData = arr.map(i => ({
+    name: i.country,
+    value:i.book_count
+  }));
+
+  const chart = echarts.init(document.getElementById('chartCountry'));
+  chart.setOption({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}<br/>数量: {c}<br/>占比: {d}%'
+    },
+    legend: {
+      type: 'scroll',
+      bottom: 10,
+      left: 'center',
+      textStyle: { color: '#5a6b7a', fontSize: 12 }
+    },
+    color: ['#165DFF', '#4fc3f7', '#36cfc9', '#73d13d', '#ffd666', '#ff9c6e', '#ff7875', '#9254de', '#597ef7', '#5cdbd3', '#f759ab', '#ffc53d', '#69b1ff', '#95de64', '#ff85c0'],
+    series: [{
+      name: '国别分布',
+      type: 'pie',
+      radius: ['32%', '65%'],
+      center: ['50%', '46%'],
+      avoidLabelOverlap: true,
+      itemStyle: {
+        borderColor: '#fff',
+        borderWidth: 2,
+        borderRadius: 4
+      },
+      label: {
+        show: true,
+        formatter: '{b}\n{d}%',
+        color: '#2c3e50',
+        fontSize: 12
+      },
+      labelLine: {
+        length: 15,
+        length2: 10
+      },
+      emphasis: {
+        label: { show: true, fontSize: 14, fontWeight: 'bold' },
+        itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.2)' }
+      },
+      data: chartData
+    }]
+  });
+}, function() {
+  document.getElementById('chartCountry').innerHTML = '<div class="error-msg">数据加载失败，请检查接口 http://127.0.0.1:8000/api/country_count/ 是否可用</div>';
+});
+
+window.addEventListener('resize', function() {
+  const inst = echarts.getInstanceByDom(document.getElementById('chartCountry'));
+  if (inst) inst.resize();
+});
+</script>
+</body>
+</html>
